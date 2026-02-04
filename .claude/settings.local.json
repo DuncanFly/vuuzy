@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(timeout:*)",
+      "Bash(ping:*)",
+      "Bash(npm install:*)",
+      "Bash(powershell -Command \"Stop-Process -Id 44664 -Force -ErrorAction SilentlyContinue; Remove-Item -Recurse -Force ''C:\\\\Users\\\\sbdin\\\\Projects\\\\vuuzy\\\\.next'' -ErrorAction SilentlyContinue\")",
+      "Bash(powershell -Command \"Get-Process -Name node -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 2; Remove-Item -Recurse -Force ''C:\\\\Users\\\\sbdin\\\\Projects\\\\vuuzy\\\\.next'' -ErrorAction SilentlyContinue\")",
+      "Bash(dir:*)",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)"
+    ]
+  }
+}
