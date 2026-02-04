@@ -1,11 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ""
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-image"
-
-function stripDataUrlPrefix(base64: string) {
-  return base64.replace(/^data:image\/\w+;base64,/, "")
-}
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-image-preview"
 
 async function fetchWithRetry(
   url: string,
@@ -108,4 +104,14 @@ export async function POST(request: NextRequest) {
       )
     }
   } catch (error) {
+    console.error("Error processing image:", error)
+    return NextResponse.json(
+      { 
+        ok: false, 
+        error: error instanceof Error ? error.message : "Processing failed",
+        message: "Internal server error"
+      },
+      { status: 500 }
+    )
+  }
 }
