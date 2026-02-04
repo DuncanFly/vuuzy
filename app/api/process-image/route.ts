@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ""
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-image-preview"
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-image"
+
+function stripDataUrlPrefix(base64: string) {
+  return base64.replace(/^data:image\/\w+;base64,/, "")
+}
 
 async function fetchWithRetry(
   url: string,
@@ -38,80 +42,84 @@ export async function POST(request: NextRequest) {
     const { imageData, replaceBackground } = await request.json()
 
     if (!imageData) {
-      return NextResponse.json({ error: "No image data provided" }, { status: 400 })
+      return NextResponse.json({error:"No image data provided"},{status:400})
     }
 
     if (!GEMINI_API_KEY) {
       return NextResponse.json(
-        { error: "API key not configured. Set GEMINI_API_KEY in environment variables." },
-        { status: 500 }
+        {error:"API key not configured. Set GEMINI_API_KEY in environment variables."},
+        {status:500}
       )
     }
 
-    // Rule: Always strip data:image/...;base64, prefix for stability
-    const cleanedBase64 = imageData.replace(/^data:image\/\w+;base64,/, "")
+    const rawBase64 = stripDataUrlPrefix(imageData)
 
     const prompt = replaceBackground
       ? `Act as an expert image editor. Keep the main subject exactly as is, but replace the background with ${replaceBackground}. Match lighting. Output ONLY the resulting PNG.`
-      : "Act as an expert image editor. Remove the background. Keep only the main subject with transparency. Output ONLY the modified PNG."
+      : "Act as an expert image editor. Remove the background completely. Keep only the main subject with transparent background. Output ONLY the resulting PNG."
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`
 
-    const response = await fetchWithRetry(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetchWithRetry(url,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({
         contents: [
           {
             parts: [
               { text: prompt },
-              { inline_data: { mime_type: "image/png", data: cleanedBase64 } },
+              {
+                inline_data: {
+                  mime_type: "image/png",
+                  data: rawBase64,
+                },
+              },
             ],
           },
         ],
-        generation_config: { 
-          // Rule: Use snake_case for REST (response_modalities)
-          response_modalities: ["TEXT", "IMAGE"] 
+        generation_config: {
+          candidate_count: 1,
+          temperature: 0.2,
         },
       }),
     })
 
     const result = await response.json()
-    
-    // Check for inline_data in parts (snake_case)
-    const outputBase64 = result.candidates?.[0]?.content?.parts?.find(
-      (p: { inline_data?: { data: string } }) => p.inline_data
-    )?.inline_data?.data
+
+    const parts = result.candidates?.[0]?.content?.parts ?? []
+
+    const outputBase64 =
+      parts.find((p: any) => p.inlineData?.data)?.inlineData?.data ??
+      parts.find((p: any) => p.inline_data?.data)?.inline_data?.data
 
     if (outputBase64) {
-      return NextResponse.json({ imageData: outputBase64 })
-    } else {
-      // Rule: Add full-response logging only on failure
-      console.error("Gemini full response on failure:", JSON.stringify(result, null, 2))
-      
-      const textOutput = result.candidates?.[0]?.content?.parts?.find(
-        (p: { text?: string }) => p.text
-      )?.text
-      
-      return NextResponse.json(
-        { 
-          ok: false,
-          error: "AI failed to return an image.", 
-          details: textOutput || "No content returned",
-          message: "The model did not return image data. It might be a safety refusal or unsupported request."
-        },
-        { status: 500 }
-      )
+      return NextResponse.json({imageData:outputBase64})
     }
+
+    const textOutput =
+      parts.find((p: any) => p.text)?.text ??
+      result.candidates?.[0]?.content?.parts?.find((p: any) => p.text)?.text
+
+    console.error("Model returned no image. Response structure:", JSON.stringify(result, null, 2))
+
+    return NextResponse.json(
+      {
+        ok:false,
+        error:"AI failed to return an image.",
+        details:textOutput || "No content returned",
+        message:"The model did not return image data. It might be a safety refusal or unsupported request.",
+      },
+      {status:500}
+    )
   } catch (error) {
     console.error("Error processing image:", error)
     return NextResponse.json(
-      { 
-        ok: false, 
-        error: error instanceof Error ? error.message : "Processing failed",
-        message: "Internal server error"
+      {
+        ok:false,
+        error:error instanceof Error ? error.message : "Processing failed",
+        message:"Internal server error",
       },
-      { status: 500 }
+      {status:500}
     )
   }
 }
