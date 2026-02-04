@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vuuzy - AI Powered Background Removal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            scroll-behavior: smooth;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .checkerboard-bg {
+            background-image: 
+                linear-gradient(45deg, #111 25%, transparent 25%), 
+                linear-gradient(-45deg, #111 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #111 75%), 
+                linear-gradient(-45deg, transparent 75%, #111 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+            background-color: #050505;
+        }
+
+        .loader {
+            border-top-color: #ffffff;
+            animation: spinner 0.8s linear infinite;
+        }
+
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .drop-zone--over {
+            border-color: #ffffff;
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, #ffffff, #a1a1aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="selection:bg-white selection:text-black">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 glass-card border-t-0 border-x-0">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-white rounded flex items-center justify-center">
+                    <span class="text-black font-black text-xl">v</span>
+                </div>
+                <span class="text-xl font-bold tracking-tighter">vuuzy</span>
+            </div>
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
+                <a href="#features" class="hover:text-white transition-colors">Features</a>
+                <a href="#how-it-works" class="hover:text-white transition-colors">How it Works</a>
+                <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
+            </div>
+            <button onclick="document.getElementById('tool-section').scrollIntoView()" class="bg-white text-black text-sm font-bold px-5 py-2 rounded-full hover:bg-zinc-200 transition-colors">
+                Try Free
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="tool-section" class="pt-40 pb-20 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 mb-6">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                </span>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-400">AI-Powered Background Removal</span>
+            </div>
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 gradient-text">
+                Remove backgrounds<br>instantly
+            </h1>
+            <p class="text-zinc-400 text-lg md:text-xl max-w-2xl mx-auto mb-12">
+                Drop any image, get professional results in seconds.<br>
+                Free preview, pay only when you download.
+            </p>
+
+            <!-- Tool Container -->
+            <div class="max-w-3xl mx-auto">
+                <div id="upload-section" class="group">
+                    <div id="drop-zone" class="w-full h-80 border border-zinc-800 rounded-3xl flex flex-col items-center justify-center cursor-pointer transition-all hover:border-zinc-500 bg-zinc-950/50">
+                        <div class="bg-white/10 p-4 rounded-2xl mb-4 group-hover:scale-110 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                        </div>
+                        <p class="text-lg font-semibold">Drop your image here</p>
+                        <p class="text-zinc-500 text-sm mt-1">or click to browse</p>
+                        <p class="text-[10px] text-zinc-600 mt-4 uppercase tracking-widest font-bold">Supports PNG, JPG, WEBP up to 10MB</p>
+                        <input type="file" id="file-input" class="hidden" accept="image/*">
+                    </div>
+                </div>
+
+                <!-- Processing UI -->
+                <div id="processing-section" class="hidden py-24 glass-card rounded-3xl">
+                    <div class="loader ease-linear rounded-full border-2 border-t-2 border-zinc-800 h-16 w-16 mx-auto mb-6"></div>
+                    <h3 id="processing-title" class="text-xl font-bold">Processing...</h3>
+                    <p class="text-zinc-500 text-sm mt-2">Gemini AI is isolating your subject.</p>
+                </div>
+
+                <!-- Result UI -->
+                <div id="result-section" class="hidden animate-in fade-in duration-700">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="relative group">
+                            <p class="absolute top-4 left-4 z-20 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Original</p>
+                            <div class="h-64 rounded-2xl border border-zinc-800 overflow-hidden bg-zinc-900 flex items-center justify-center">
+                                <img id="original-preview" src="" class="max-h-full max-w-full object-contain">
+                            </div>
+                        </div>
+                        <div class="relative group">
+                             <div class="absolute top-4 right-4 z-20 flex gap-2">
+                                <button type="button" onclick="setBg('checker')" class="w-5 h-5 rounded border border-white/20 checkerboard-bg"></button>
+                                <button type="button" onclick="setBg('white')" class="w-5 h-5 rounded border border-white/20 bg-white"></button>
+                                <button type="button" onclick="setBg('black')" class="w-5 h-5 rounded border border-white/20 bg-black"></button>
+                            </div>
+                            <p class="absolute top-4 left-4 z-20 text-[10px] font-bold uppercase tracking-widest text-zinc-500">Result</p>
+                            <div id="result-container" class="h-64 rounded-2xl border border-zinc-800 overflow-hidden checkerboard-bg flex items-center justify-center transition-colors duration-300">
+                                <img id="result-preview" src="" class="max-h-full max-w-full object-contain">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card p-6 rounded-2xl mb-8">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-3 text-left">Replace Background</p>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <input type="text" id="bg-description" placeholder="Describe a new scene..." class="flex-grow bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:ring-1 ring-white/30 text-sm">
+                            <button id="replace-bg-btn" type="button" class="bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-bold px-6 py-3 rounded-xl transition-colors">
+                                Generate
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button id="download-btn" class="bg-white text-black font-bold py-4 px-10 rounded-2xl hover:bg-zinc-200 transition-all active:scale-95 flex items-center justify-center">
+                            Download HD PNG
+                        </button>
+                        <button id="reset-btn" class="text-zinc-400 font-bold py-4 px-10 rounded-2xl hover:text-white transition-colors">
+                            Upload Another
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Error Message -->
+                <div id="error-message" class="hidden mt-6 text-red-400 text-sm font-medium"></div>
+            </div>
+
+            <div class="mt-12 flex items-center justify-center gap-8 text-[10px] font-bold uppercase tracking-widest text-zinc-600">
+                <span class="flex items-center gap-2"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"></path></svg> Secure & Private</span>
+                <span class="flex items-center gap-2"><svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path></svg> Instant Processing</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose Vuuzy? -->
+    <section id="features" class="py-32 px-6 border-t border-zinc-900">
+        <div class="max-w-7xl mx-auto text-center">
+            <h2 class="text-4xl font-bold mb-16">Why choose Vuuzy?</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Feature 1 -->
+                <div class="glass-card p-8 rounded-3xl text-left hover:border-white/20 transition-all group">
+                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-6 group-hover:bg-white transition-colors">
+                        <svg class="w-5 h-5 text-white group-hover:text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <h4 class="text-lg font-bold mb-2">Lightning Fast</h4>
+                    <p class="text-zinc-500 text-sm leading-relaxed">AI removes backgrounds in under 5 seconds. No waiting, no hassle.</p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="glass-card p-8 rounded-3xl text-left hover:border-white/20 transition-all group">
+                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-6 group-hover:bg-white transition-colors">
+                        <svg class="w-5 h-5 text-white group-hover:text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    </div>
+                    <h4 class="text-lg font-bold mb-2">Privacy First</h4>
+                    <p class="text-zinc-500 text-sm leading-relaxed">Your images are never stored. Processed securely and deleted instantly.</p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="glass-card p-8 rounded-3xl text-left hover:border-white/20 transition-all group">
+                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-6 group-hover:bg-white transition-colors">
+                        <svg class="w-5 h-5 text-white group-hover:text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <h4 class="text-lg font-bold mb-2">Pixel Perfect</h4>
+                    <p class="text-zinc-500 text-sm leading-relaxed">Advanced AI preserves fine details like hair, fur, and transparent objects.</p>
+                </div>
+                <!-- Feature 4 -->
+                <div class="glass-card p-8 rounded-3xl text-left hover:border-white/20 transition-all group">
+                    <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center mb-6 group-hover:bg-white transition-colors">
+                        <svg class="w-5 h-5 text-white group-hover:text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <h4 class="text-lg font-bold mb-2">Free Preview</h4>
+                    <p class="text-zinc-500 text-sm leading-relaxed">See your result for free before paying. Only pay when you're 100% satisfied.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it Works -->
+    <section id="how-it-works" class="py-32 px-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-4xl font-bold mb-16">How it works</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
+                <div class="absolute top-1/2 left-0 w-full h-px bg-zinc-800 -translate-y-1/2 hidden md:block"></div>
+                <div class="relative bg-black px-4">
+                    <div class="w-12 h-12 rounded-full border border-zinc-700 flex items-center justify-center mx-auto mb-6 bg-black text-xs font-bold">01</div>
+                    <h4 class="font-bold mb-2">Upload</h4>
+                    <p class="text-zinc-500 text-xs">Drag and drop your image or click to browse. We support all common formats.</p>
+                </div>
+                <div class="relative bg-black px-4">
+                    <div class="w-12 h-12 rounded-full border border-zinc-700 flex items-center justify-center mx-auto mb-6 bg-black text-xs font-bold">02</div>
+                    <h4 class="font-bold mb-2">Process</h4>
+                    <p class="text-zinc-500 text-xs">Our AI instantly analyzes and removes the background in seconds.</p>
+                </div>
+                <div class="relative bg-black px-4">
+                    <div class="w-12 h-12 rounded-full border border-zinc-700 flex items-center justify-center mx-auto mb-6 bg-black text-xs font-bold">03</div>
+                    <h4 class="font-bold mb-2">Download</h4>
+                    <p class="text-zinc-500 text-xs">Preview for free, then download your high-resolution result.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section id="pricing" class="py-32 px-6 bg-zinc-950/30">
+        <div class="max-w-4xl mx-auto text-center">
+            <h2 class="text-4xl font-bold mb-4">Simple, transparent pricing</h2>
+            <p class="text-zinc-500 mb-16">Preview for free. Pay only when you download.</p>
+            
+            <div class="max-w-md mx-auto relative group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-zinc-700 to-zinc-900 rounded-[2.5rem] blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                <div class="relative glass-card rounded-[2rem] p-10 text-left border-zinc-800">
+                    <div class="flex justify-between items-start mb-8">
+                        <div>
+                            <p class="text-sm font-bold uppercase tracking-widest text-zinc-500 mb-1">Pay per image</p>
+                            <h3 class="text-4xl font-bold">$1<span class="text-lg text-zinc-500 font-medium tracking-normal">/ image</span></h3>
+                        </div>
+                        <span class="bg-white text-black text-[10px] font-black uppercase px-2 py-1 rounded">Most Popular</span>
+                    </div>
+                    <ul class="space-y-4 mb-10 text-sm">
+                        <li class="flex items-center gap-3"><svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Free preview before download</li>
+                        <li class="flex items-center gap-3"><svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Full HD resolution output</li>
+                        <li class="flex items-center gap-3"><svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Transparent PNG format</li>
+                        <li class="flex items-center gap-3"><svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> No watermarks</li>
+                        <li class="flex items-center gap-3"><svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Instant delivery</li>
+                    </ul>
+                    <button onclick="document.getElementById('tool-section').scrollIntoView()" class="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-zinc-200 transition-colors">
+                        Get Started Free
+                    </button>
+                    <p class="text-center text-[10px] text-zinc-600 mt-4 uppercase tracking-tighter font-bold">No account required • Secure payment via Stripe</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-20 px-6 border-t border-zinc-900">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-white rounded flex items-center justify-center">
+                    <span class="text-black font-black text-xs">v</span>
+                </div>
+                <span class="text-lg font-bold tracking-tighter">vuuzy</span>
+            </div>
+            <div class="flex gap-8 text-xs font-bold uppercase tracking-widest text-zinc-600">
+                <a href="#" class="hover:text-white transition-colors">Terms</a>
+                <a href="#" class="hover:text-white transition-colors">Privacy</a>
+                <a href="#" class="hover:text-white transition-colors">Contact</a>
+            </div>
+            <p class="text-xs text-zinc-600">© 2026 Vuuzy. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        const apiKey = "";
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const uploadSection = document.getElementById('upload-section');
+        const processingSection = document.getElementById('processing-section');
+        const resultSection = document.getElementById('result-section');
+        const resultContainer = document.getElementById('result-container');
+        const errorMessage = document.getElementById('error-message');
+        
+        const originalPreview = document.getElementById('original-preview');
+        const resultPreview = document.getElementById('result-preview');
+        const downloadBtn = document.getElementById('download-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const replaceBgBtn = document.getElementById('replace-bg-btn');
+        const bgDescription = document.getElementById('bg-description');
+
+        let originalBase64 = null;
+        let processedImageBase64 = null;
+
+        function setBg(type) {
+            resultContainer.classList.remove('checkerboard-bg');
+            resultContainer.style.backgroundColor = '';
+            if (type === 'checker') resultContainer.classList.add('checkerboard-bg');
+            if (type === 'white') resultContainer.style.backgroundColor = 'white';
+            if (type === 'black') resultContainer.style.backgroundColor = 'black';
+        }
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drop-zone--over');
+        });
+        ['dragleave', 'dragend'].forEach(t => dropZone.addEventListener(t, () => dropZone.classList.remove('drop-zone--over')));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drop-zone--over');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', () => { if (fileInput.files.length) handleFile(fileInput.files[0]); });
+
+        resetBtn.addEventListener('click', () => {
+            uploadSection.classList.remove('hidden');
+            resultSection.classList.add('hidden');
+            fileInput.value = '';
+            bgDescription.value = '';
+            setBg('checker');
+        });
+
+        replaceBgBtn.addEventListener('click', () => {
+            const desc = bgDescription.value.trim();
+            if (desc && originalBase64) processImage(originalBase64, desc);
+        });
+
+        async function handleFile(file) {
+            if (!file.type.startsWith('image/')) return showError("Invalid file type.");
+            if (file.size > 10 * 1024 * 1024) return showError("File too large (Max 10MB).");
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64Content = e.target.result.split(',')[1];
+                originalBase64 = base64Content;
+                originalPreview.src = e.target.result;
+                processImage(base64Content);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function processImage(base64Data, replaceDesc = null) {
+            uploadSection.classList.add('hidden');
+            resultSection.classList.add('hidden');
+            processingSection.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            document.getElementById('processing-title').textContent = replaceDesc ? "Generating Scene..." : "Removing Background...";
+
+            const prompt = replaceDesc 
+                ? `Keep the main subject exactly as is, but replace the background with ${replaceDesc}. Match the lighting. Output ONLY the resulting PNG.` 
+                : "Remove the background from this image. Keep only the main subject with transparency. Output ONLY the modified PNG.";
+
+            try {
+                const response = await fetchWithRetry(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [{ text: prompt }, { inlineData: { mimeType: "image/png", data: base64Data } }]
+                            }],
+                            generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+                        })
+                    }
+                );
+
+                const result = await response.json();
+                const outputBase64 = result.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+
+                if (outputBase64) {
+                    processedImageBase64 = outputBase64;
+                    resultPreview.src = `data:image/png;base64,${outputBase64}`;
+                    processingSection.classList.add('hidden');
+                    resultSection.classList.remove('hidden');
+                    setBg(replaceDesc ? 'white' : 'checker');
+                } else {
+                    throw new Error("AI failed to return image data.");
+                }
+            } catch (err) {
+                showError("Processing failed. Please try again.");
+                processingSection.classList.add('hidden');
+                uploadSection.classList.remove('hidden');
+            }
+        }
+
+        async function fetchWithRetry(url, options, retries = 5, backoff = 1000) {
+            try {
+                const res = await fetch(url, options);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return res;
+            } catch (err) {
+                if (retries > 0) {
+                    await new Promise(r => setTimeout(r, backoff));
+                    return fetchWithRetry(url, options, retries - 1, backoff * 2);
+                }
+                throw err;
+            }
+        }
+
+        downloadBtn.addEventListener('click', () => {
+            if (!processedImageBase64) return;
+            const byteChars = atob(processedImageBase64);
+            const bytes = new Uint8Array(byteChars.length);
+            for (let i = 0; i < byteChars.length; i++) bytes[i] = byteChars.charCodeAt(i);
+            const blob = new Blob([bytes], { type: 'image/png' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `vuuzy-export-${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            setTimeout(() => { document.body.removeChild(link); URL.revokeObjectURL(url); }, 1000);
+        });
+
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorMessage.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
