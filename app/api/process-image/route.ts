@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ""
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-image"
-const GEMINI_API_VERSION = process.env.GEMINI_API_VERSION || "v1"
+
+function stripDataUrlPrefix(base64: string) {
+  return base64.replace(/^data:image\/\w+;base64,/, "")
+}
 
 async function fetchWithRetry(
   url: string,
@@ -14,7 +17,6 @@ async function fetchWithRetry(
     const res = await fetch(url, options)
     if (!res.ok) {
       const errorText = await res.text()
-      // Don't retry client errors (4xx) except 429
       if (res.status >= 400 && res.status < 500 && res.status !== 429) {
         console.error(`API Error ${res.status}:`, errorText)
         throw new Error(`HTTP ${res.status}: ${errorText}`)
@@ -40,72 +42,84 @@ export async function POST(request: NextRequest) {
     const { imageData, replaceBackground } = await request.json()
 
     if (!imageData) {
-      return NextResponse.json({ error: "No image data provided" }, { status: 400 })
+      return NextResponse.json({error:"No image data provided"},{status:400})
     }
 
     if (!GEMINI_API_KEY) {
       return NextResponse.json(
-        { error: "API key not configured. Set GEMINI_API_KEY in environment variables." },
-        { status: 500 }
+        {error:"API key not configured. Set GEMINI_API_KEY in environment variables."},
+        {status:500}
       )
     }
 
+    const rawBase64 = stripDataUrlPrefix(imageData)
+
     const prompt = replaceBackground
       ? `Act as an expert image editor. Keep the main subject exactly as is, but replace the background with ${replaceBackground}. Match lighting. Output ONLY the resulting PNG.`
-      : "Act as an expert image editor. Remove the background. Keep only the main subject with transparency. Output ONLY the modified PNG."
+      : "Act as an expert image editor. Remove the background completely. Keep only the main subject with transparent background. Output ONLY the resulting PNG."
 
-    const url = `https://generativelanguage.googleapis.com/${GEMINI_API_VERSION}/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`
 
-    const response = await fetchWithRetry(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetchWithRetry(url,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({
         contents: [
           {
             parts: [
               { text: prompt },
-              { inlineData: { mimeType: "image/png", data: imageData } },
+              {
+                inline_data: {
+                  mime_type: "image/png",
+                  data: rawBase64,
+                },
+              },
             ],
           },
         ],
-        generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+        generation_config: {
+          candidate_count: 1,
+          temperature: 0.2,
+        },
       }),
     })
 
     const result = await response.json()
 
-    const outputBase64 = result.candidates?.[0]?.content?.parts?.find(
-      (p: { inlineData?: { data: string } }) => p.inlineData
-    )?.inlineData?.data
+    const parts = result.candidates?.[0]?.content?.parts ?? []
+
+    const outputBase64 =
+      parts.find((p: any) => p.inlineData?.data)?.inlineData?.data ??
+      parts.find((p: any) => p.inline_data?.data)?.inline_data?.data
 
     if (outputBase64) {
-      return NextResponse.json({ imageData: outputBase64 })
+      return NextResponse.json({imageData:outputBase64})
     }
 
-    const textOutput = result.candidates?.[0]?.content?.parts?.find(
-      (p: { text?: string }) => p.text
-    )?.text
+    const textOutput =
+      parts.find((p: any) => p.text)?.text ??
+      result.candidates?.[0]?.content?.parts?.find((p: any) => p.text)?.text
 
     console.error("Model returned no image. Response structure:", JSON.stringify(result, null, 2))
 
     return NextResponse.json(
       {
-        ok: false,
-        error: "AI failed to return an image.",
-        details: textOutput || "No content returned",
-        message: "The model did not return image data. It might be a safety refusal or unsupported request.",
+        ok:false,
+        error:"AI failed to return an image.",
+        details:textOutput || "No content returned",
+        message:"The model did not return image data. It might be a safety refusal or unsupported request.",
       },
-      { status: 500 }
+      {status:500}
     )
   } catch (error) {
     console.error("Error processing image:", error)
     return NextResponse.json(
       {
-        ok: false,
-        error: error instanceof Error ? error.message : "Processing failed",
-        message: "Internal server error",
+        ok:false,
+        error:error instanceof Error ? error.message : "Processing failed",
+        message:"Internal server error",
       },
-      { status: 500 }
+      {status:500}
     )
   }
 }
