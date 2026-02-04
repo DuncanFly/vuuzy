@@ -7,10 +7,12 @@ import './globals.css'
 const _inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Vuuzy - Free AI Background Remover',
-  description: 'Remove image backgrounds instantly with AI. Free preview, professional results in seconds.',
+  title: 'Remove Backgrounds Instantly with AI | Vuuzy',
+  description: 'Upload any photo and remove the background in seconds — or generate a brand new one with AI.',
   generator: 'v0.app',
   openGraph: {
+    title: 'Remove Backgrounds Instantly with AI | Vuuzy',
+    description: 'Upload any photo and remove the background in seconds — or generate a brand new one with AI.',
     type: 'website',
     images: [
       {
