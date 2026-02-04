@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       : "Act as an expert image editor. Remove the background. Keep only the main subject with transparency. Output ONLY the modified PNG."
 
     const response = await fetchWithRetry(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-0520:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
