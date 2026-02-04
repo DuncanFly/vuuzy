@@ -10,6 +10,16 @@ export const metadata: Metadata = {
   title: 'Vuuzy - Free AI Background Remover',
   description: 'Remove image backgrounds instantly with AI. Free preview, professional results in seconds.',
   generator: 'v0.app',
+  openGraph: {
+    type: 'website',
+    images: [
+      {
+        url: 'https://vuuzy.com/og-image.png',
+        width: 1200,
+        height: 630,
+      },
+    ],
+  },
   icons: {
     icon: [
       {
