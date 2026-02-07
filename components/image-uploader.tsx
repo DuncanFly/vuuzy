@@ -47,7 +47,16 @@ export function ImageUploader() {
           }),
         })
 
-        const result = await response.json()
+        let result
+        try {
+          result = await response.json()
+        } catch {
+          throw new Error(
+            response.status === 413
+              ? "Image is too large. Please try a smaller file."
+              : `Server error (${response.status})`
+          )
+        }
 
         if (!response.ok) {
           throw new Error(result.error || "Processing failed")
@@ -136,11 +145,11 @@ export function ImageUploader() {
   }
 
   const handleDownload = () => {
+    const disablePaywall = process.env.NEXT_PUBLIC_DISABLE_PAYWALL === "true"
     const stripeLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK
-    if (stripeLink && stripeLink !== "https://buy.stripe.com/YOUR_STRIPE_LINK") {
+    if (!disablePaywall && stripeLink && stripeLink !== "https://buy.stripe.com/YOUR_STRIPE_LINK") {
       window.open(stripeLink, "_blank")
     } else {
-      // Fallback to direct download if no Stripe link configured
       if (!processedImage) return
       const link = document.createElement("a")
       link.href = processedImage
